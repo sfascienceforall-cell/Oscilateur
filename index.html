@@ -1,0 +1,166 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#fff;font-family:system-ui,-apple-system,sans-serif;}
+canvas{display:block;border-radius:12px;border:1.5px solid #e8e8e8;touch-action:none;}
+.steps{font-size:12.5px;border-radius:14px;background:#fafafa;border:1.5px solid #e6e6e6;margin:8px 0;overflow:hidden;font-family:ui-monospace,monospace;}
+.srow{display:flex;gap:0;border-bottom:1px solid #eee;}
+.srow:last-child{border-bottom:none;}
+.scell{flex:1;padding:7px 12px;color:#2c2c2a;}
+.scell.h{color:#c8c8c8;}
+.srow.cur{background:#eef6ff;}
+.srow.cur .scell{color:#153b63;font-weight:600;}
+.snote{padding:7px 12px;font-size:12px;color:#0F6E56;background:#eaf7f1;border-top:1px solid #d5ede2;}
+.thd{background:#f0f0f0;font-weight:700;font-size:11px;color:#555;}
+.row{display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap;}
+.pill{font-size:13px;font-weight:500;color:#2c2c2a;background:#f5f5f5;border:1.5px solid #d0d0d0;border-radius:20px;padding:6px 14px;white-space:nowrap;}
+.btn{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid #d0d0d0;background:#fff;color:#2c2c2a;}
+.btn.on{border-color:#185fa5;background:#e6f1fb;color:#185fa5;}
+.val{min-width:66px;text-align:center;font-size:13px;font-weight:500;color:#2c2c2a;background:#f5f5f5;border:1.5px solid #d0d0d0;border-radius:20px;padding:5px 10px;}
+input[type=range]{flex:1;min-width:100px;}
+</style>
+
+<canvas id="cv" style="width:100%;height:52vh;min-height:340px;"></canvas>
+
+<div class="steps" id="steps"></div>
+
+<div class="row">
+  <button class="btn" id="bPrev" onclick="setStep(step-1)">◀ Précédent</button>
+  <button class="btn on" id="bNext" onclick="setStep(step+1)">Suivant ▶</button>
+  <button class="btn" onclick="paused=!paused;event.target.textContent=paused?'Lecture':'Pause';event.target.className=paused?'btn':'btn on';">Pause</button>
+</div>
+<div class="row">
+  <span class="pill" style="border-color:#b5d4f4;color:#185fa5;">A amplitude</span>
+  <input type="range" id="A" min="0.2" max="1" value="0.8" step="0.05" style="accent-color:#378ADD;max-width:150px;">
+  <span class="val" id="Av" style="border-color:#b5d4f4;color:#185fa5;">0.80</span>
+  <span class="pill" style="border-color:#9FE1CB;color:#1D9E75;">T période</span>
+  <input type="range" id="T" min="1" max="4" value="2" step="0.1" style="accent-color:#1D9E75;max-width:150px;">
+  <span class="val" id="Tv" style="border-color:#9FE1CB;color:#1D9E75;">2.0 s</span>
+  <span class="pill" style="border-color:#c9b8ea;color:#6a5aca;">φ phase</span>
+  <input type="range" id="phi" min="-180" max="180" value="0" step="10" style="accent-color:#7F77DD;max-width:150px;">
+  <span class="val" id="phiv" style="border-color:#c9b8ea;color:#6a5aca;">0°</span>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const INK='#3d3d3a',BLUE='#378ADD',BLUE_D='#185fa5',RED='#E24B4A',GREEN='#1D9E75',GREEN_D='#0F6E56',VIO='#7F77DD',GREY='#9aa0a6',AX='#c8ccd0';
+let W=0,H=0,dpr=1,paused=false,step=0,t=0;
+let A=0.8,T=2,phiDeg=0;
+const maxStep=5, Twin=8;
+
+const STEPS=[
+ {s:'F = m·a', p:'F = m·a', n:'On applique la 2ᵉ loi de Newton à chaque système.'},
+ {s:'ressort : F = −k·x', p:'pendule : Fₜ = −m·g·sinθ ≈ −m·g·θ', n:'Force de rappel ∝ à l\'écart (petit angle pour le pendule).'},
+ {s:'m·ẍ = −k·x', p:'m·L·θ̈ = −m·g·θ', n:'On remplace a par ẍ (ressort) ou L·θ̈ (pendule).'},
+ {s:'ẍ + (k/m)·x = 0', p:'θ̈ + (g/L)·θ = 0', n:'On range tout d\'un côté → même forme !'},
+ {s:'ẍ + ω²·x = 0   (ω²=k/m)', p:'θ̈ + ω²·θ = 0   (ω²=g/L)', n:'⇒ ÉQUATION STANDARD de l\'oscillateur harmonique.'},
+ {s:'x(t) = A·cos(ω t + φ)', p:'θ(t) = A·cos(ω t + φ)', n:'SOLUTION : une sinusoïde. Règle A, T = 2π/ω et φ ci-dessous.'},
+];
+
+function setStep(k){step=Math.max(0,Math.min(maxStep,k));renderSteps();
+  document.getElementById('bPrev').className=step===0?'btn':'btn';
+  document.getElementById('bNext').textContent=step===maxStep?'Terminé ✓':'Suivant ▶';
+}
+function renderSteps(){
+  let h='<div class="srow thd"><div class="scell">RESSORT (masse–ressort)</div><div class="scell">PENDULE</div></div>';
+  for(let i=0;i<=maxStep;i++){
+    const st=STEPS[i], vis=i<=step, cur=i===step;
+    h+='<div class="srow'+(cur?' cur':'')+'"><div class="scell'+(vis?'':' h')+'">'+(vis?st.s:'· · ·')+'</div><div class="scell'+(vis?'':' h')+'">'+(vis?st.p:'· · ·')+'</div></div>';
+  }
+  h+='<div class="snote">'+STEPS[step].n+'</div>';
+  document.getElementById('steps').innerHTML=h;
+}
+function bind(id,fmt,f){const s=document.getElementById(id),o=document.getElementById(id+'v');
+  s.addEventListener('input',()=>{const v=parseFloat(s.value);f(v);o.textContent=fmt(v);});}
+bind('A',v=>v.toFixed(2),v=>A=v);
+bind('T',v=>v.toFixed(1)+' s',v=>T=v);
+bind('phi',v=>v+'°',v=>phiDeg=v);
+
+function syncSize(){const r=cv.getBoundingClientRect();dpr=window.devicePixelRatio||1;
+  const nW=Math.round(r.width)||700,nH=Math.round(r.height)||350;
+  if(nW!==W||nH!==H){W=nW;H=nH;cv.width=W*dpr;cv.height=H*dpr;}ctx.setTransform(dpr,0,0,dpr,0,0);}
+
+function arrow(x,y,vx,vy,col,w){const len=Math.hypot(vx,vy);if(len<3)return;const ex=x+vx,ey=y+vy;
+  ctx.strokeStyle=col;ctx.lineWidth=w||2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
+  const hs=(w||2.5)*3,ang=Math.atan2(vy,vx);ctx.fillStyle=col;ctx.save();ctx.translate(ex,ey);ctx.rotate(ang);
+  ctx.beginPath();ctx.moveTo(hs,0);ctx.lineTo(-hs*0.7,-hs*0.55);ctx.lineTo(-hs*0.7,hs*0.55);ctx.closePath();ctx.fill();ctx.restore();}
+
+function draw(){
+  syncSize();ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  const om=2*Math.PI/T, phi=phiDeg*Math.PI/180;
+  const sig=t=>A*Math.cos(om*t+phi);
+  const s=sig(t);
+  const Lw=W*0.46;
+
+  // ===== RESSORT (haut gauche) =====
+  const syA=H*0.24, wallX=28, eqX=Lw*0.52, amp=Lw*0.20, bs=30;
+  ctx.fillStyle=GREY;ctx.font='700 12px system-ui';ctx.textAlign='left';ctx.fillText('Ressort',wallX,syA-52);
+  // mur
+  ctx.strokeStyle='#b7bbbf';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(wallX,syA-30);ctx.lineTo(wallX,syA+30);ctx.stroke();
+  for(let i=-3;i<=3;i++){ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(wallX,syA+i*9);ctx.lineTo(wallX-8,syA+i*9-6);ctx.stroke();}
+  // ligne équilibre
+  ctx.strokeStyle='#e0e0e0';ctx.setLineDash([3,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(eqX,syA-34);ctx.lineTo(eqX,syA+40);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=GREY;ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('équilibre',eqX,syA+52);
+  const bx=eqX+s*amp;
+  // ressort
+  ctx.strokeStyle=INK;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wallX,syA);
+  const cs=wallX+8, ce=bx-bs/2, span=ce-cs, nn=14;
+  ctx.lineTo(cs,syA);
+  for(let i=1;i<nn;i++){const xx=cs+span*i/nn;ctx.lineTo(xx,syA+(i%2?-9:9));}
+  ctx.lineTo(ce,syA);ctx.stroke();
+  // force de rappel
+  if(step>=1&&Math.abs(s)>0.02)arrow(bx,syA,-Math.sign(s)*Math.min(Math.abs(s)*amp*1.1,60),0,RED,3);
+  // bloc
+  ctx.fillStyle='#e6f1fb';ctx.strokeStyle=BLUE;ctx.lineWidth=2.5;ctx.beginPath();ctx.roundRect(bx-bs/2,syA-bs/2,bs,bs,5);ctx.fill();ctx.stroke();
+  // déplacement x
+  if(Math.abs(s)>0.02){arrow(eqX,syA+30,s*amp,0,GREEN_D,1.8);ctx.fillStyle=GREEN_D;ctx.font='600 11px ui-monospace,monospace';ctx.fillText('x',(eqX+bx)/2,syA+44);}
+
+  // ===== PENDULE (bas gauche) =====
+  const pivot={x:Lw*0.52,y:H*0.50}, Lp=H*0.30, maxA=0.6;
+  const th=s*maxA;
+  const bob={x:pivot.x+Lp*Math.sin(th),y:pivot.y+Lp*Math.cos(th)};
+  ctx.fillStyle=GREY;ctx.font='700 12px system-ui';ctx.textAlign='left';ctx.fillText('Pendule',24,pivot.y-6);
+  // référence verticale
+  ctx.strokeStyle='#e0e0e0';ctx.setLineDash([3,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(pivot.x,pivot.y+Lp+14);ctx.stroke();ctx.setLineDash([]);
+  // arc θ
+  ctx.strokeStyle=ORANGEfix();ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(pivot.x,pivot.y,28,Math.PI/2,Math.PI/2-th,th>0);ctx.stroke();
+  ctx.fillStyle=ORANGEfix();ctx.font='600 12px system-ui';ctx.textAlign='center';ctx.fillText('θ',pivot.x+ (th>=0?16:-16),pivot.y+34);
+  // tige
+  ctx.strokeStyle=INK;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(bob.x,bob.y);ctx.stroke();
+  // pivot
+  ctx.fillStyle=GREY;ctx.beginPath();ctx.arc(pivot.x,pivot.y,4,0,7);ctx.fill();
+  // force de rappel tangentielle
+  if(step>=1&&Math.abs(th)>0.02){const tang={x:Math.cos(th),y:-Math.sin(th)};arrow(bob.x,bob.y,-Math.sign(th)*tang.x*40,-Math.sign(th)*tang.y*40,RED,2.6);}
+  // bob
+  ctx.fillStyle='#e6f1fb';ctx.strokeStyle=BLUE;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(bob.x,bob.y,14,0,7);ctx.fill();ctx.stroke();
+
+  // ===== GRAPHE sinusoïde (droite) =====
+  const gx=W*0.53,gw=W-gx-18,gTop=H*0.14,gBot=H*0.86,gcy=(gTop+gBot)/2,gA=(gBot-gTop)*0.40;
+  const mapT=tau=>gx+tau/Twin*gw, mapY=val=>gcy-val*gA;
+  ctx.strokeStyle=AX;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(gx,gcy);ctx.lineTo(gx+gw,gcy);ctx.moveTo(gx,gTop);ctx.lineTo(gx,gBot);ctx.stroke();
+  ctx.fillStyle=GREY;ctx.font='600 11px system-ui';ctx.textAlign='left';ctx.fillText('x(t)',gx+4,gTop+2);ctx.textAlign='right';ctx.fillText('t',gx+gw-2,gcy-6);
+  // lignes ±A
+  ctx.strokeStyle='#e3e6e9';ctx.setLineDash([4,4]);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(gx,mapY(A));ctx.lineTo(gx+gw,mapY(A));ctx.moveTo(gx,mapY(-A));ctx.lineTo(gx+gw,mapY(-A));ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=BLUE_D;ctx.font='600 11px ui-monospace,monospace';ctx.textAlign='left';ctx.fillText('+A',gx+gw-26,mapY(A)-4);ctx.fillText('−A',gx+gw-26,mapY(-A)+14);
+  // courbe
+  ctx.strokeStyle=step>=5?GREEN:'#bcd9c9';ctx.lineWidth=2.6;ctx.beginPath();
+  for(let i=0;i<=240;i++){const tau=Twin*i/240;const X=mapT(tau),Y=mapY(sig(tau));i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}ctx.stroke();
+  // période : bracket entre deux pics
+  const k1=Math.ceil((0*om+phi)/(2*Math.PI));
+  let tp1=(2*Math.PI*k1-phi)/om; if(tp1<0)tp1+=T; while(tp1>T)tp1-=T; const tp2=tp1+T;
+  if(tp2<=Twin){const y=mapY(A)-14;ctx.strokeStyle=VIO;ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(mapT(tp1),y);ctx.lineTo(mapT(tp2),y);ctx.moveTo(mapT(tp1),y-4);ctx.lineTo(mapT(tp1),y+4);ctx.moveTo(mapT(tp2),y-4);ctx.lineTo(mapT(tp2),y+4);ctx.stroke();
+    ctx.fillStyle=VIO;ctx.font='600 11px system-ui';ctx.textAlign='center';ctx.fillText('T = '+T.toFixed(1)+' s',(mapT(tp1)+mapT(tp2))/2,y-4);}
+  // point courant
+  const tc=t%Twin;
+  ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(mapT(tc),gTop);ctx.lineTo(mapT(tc),gBot);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=GREEN_D;ctx.beginPath();ctx.arc(mapT(tc),mapY(s),5,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  // formule (dès l'étape solution)
+  if(step>=5){ctx.fillStyle=GREEN_D;ctx.font='700 13px ui-monospace,monospace';ctx.textAlign='center';ctx.fillText('x(t) = A·cos(ωt + φ) ,  ω = 2π/T = '+(2*Math.PI/T).toFixed(2)+' rad/s',(gx+gx+gw)/2,gBot+22);}
+
+  if(!paused)t+=0.016;
+  requestAnimationFrame(draw);
+}
+function ORANGEfix(){return '#BA7517';}
+setStep(0);draw();
+</script>
