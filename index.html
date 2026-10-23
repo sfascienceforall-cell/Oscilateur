@@ -1,3 +1,13 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oscillateur harmonique · SFA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500&display=swap">
+</head>
+<body>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#fff;font-family:system-ui,-apple-system,sans-serif;}
@@ -18,6 +28,81 @@ canvas{display:block;border-radius:12px;border:1.5px solid #e8e8e8;touch-action:
 .val{min-width:66px;text-align:center;font-size:13px;font-weight:500;color:#2c2c2a;background:#f5f5f5;border:1.5px solid #d0d0d0;border-radius:20px;padding:5px 10px;}
 input[type=range]{flex:1;min-width:100px;}
 </style>
+<style id="sfa-kit">
+/* Kit SFA (clair) — plan blanc sur fond gris-bleu froid, encre bleu nuit, or en accent unique, réglages en règle graduée. */
+:root{--bg:#f3f5f8;--paper:#ffffff;--ink:#0c1f2e;--muted:#5b6b7b;--faint:#8a98a6;--rule:#dfe4ea;--rule2:#c9d1da;
+  --gold:#d9973f;--gold-ink:#9a6420;--press:#e9edf2;
+  --f-ui:"Mulish",system-ui,-apple-system,"Segoe UI",sans-serif;--f-math:"STIX Two Text","Cambria Math",serif;
+  --f-num:"JetBrains Mono",ui-monospace,monospace;color-scheme:light}
+html{background:var(--bg)}
+body{background:var(--bg)!important;color:var(--ink);font-family:var(--f-ui)!important;font-size:15px;line-height:1.5;
+  max-width:1180px;margin:0 auto!important;padding:20px 16px 32px!important}
+.sfa-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 24px;
+  border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:16px}
+.sfa-head h1{font:700 1.5rem/1.2 var(--f-ui);margin:0;letter-spacing:-.005em;text-wrap:balance}
+.sfa-head h1 small{display:block;font:400 .88rem var(--f-ui);color:var(--muted);margin-top:3px}
+.sfa-head .sfa-tag{font:600 .8rem var(--f-ui);color:var(--muted)}
+.sfa-head .sfa-tag b{color:var(--gold-ink);font-weight:700}
+select{font:500 .86rem var(--f-ui)!important;border:1px solid var(--rule2)!important;border-radius:3px!important;background:var(--paper)!important;color:var(--ink)!important;padding:5px 8px!important}
+.sfa-stage{border:1px solid var(--rule)!important;border-radius:4px!important;box-shadow:0 1px 2px rgba(12,31,46,.05),0 8px 24px -16px rgba(12,31,46,.18)}
+.sfa-stage canvas{border:0!important;box-shadow:none!important}
+canvas{background:var(--paper);border:1px solid var(--rule)!important;border-radius:4px!important;box-shadow:0 1px 2px rgba(12,31,46,.05),0 8px 24px -16px rgba(12,31,46,.18)}
+.row{gap:12px!important;margin:10px 0!important}
+.pill,.lbl,.tag{background:none!important;border:0!important;border-radius:0!important;padding:0!important;
+  font:600 .86rem var(--f-ui)!important;color:var(--muted);min-width:0}
+.val{background:none!important;border:0!important;border-radius:0!important;padding:0!important;
+  font:500 .9rem var(--f-num)!important;font-variant-numeric:tabular-nums;text-align:right}
+.btn{background:transparent!important;border:1px solid var(--rule2)!important;border-radius:3px!important;color:var(--muted)!important;
+  font:600 .82rem var(--f-ui)!important;padding:6px 12px!important;transition:color .15s,background .15s}
+.btn:hover{color:var(--ink)!important;background:var(--press)!important}
+.btn.on{background:var(--ink)!important;border-color:var(--ink)!important;color:#fff!important;box-shadow:inset 0 -2px 0 var(--gold)}
+.fml{background:transparent!important;border:0!important;border-left:2px solid var(--gold)!important;border-radius:0!important;
+  font:400 1.08rem/1.7 var(--f-math)!important;color:var(--ink);padding:4px 0 4px 14px!important;margin:14px 0!important}
+.info{background:var(--paper)!important;border:1px solid var(--rule)!important;border-radius:3px!important;
+  font:500 .84rem/1.8 var(--f-num)!important;color:var(--muted)!important;padding:8px 14px!important}
+input[type=range]{-webkit-appearance:none;appearance:none;height:24px;background:linear-gradient(var(--rule2),var(--rule2)) center/100% 2px no-repeat;cursor:pointer;--pc:var(--gold)}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:transparent}
+input[type=range]::-moz-range-track{height:2px;background:transparent}
+input[type=range]::-moz-range-progress{height:2px;background:var(--pc)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:6px;height:20px;border-radius:1px;background:var(--pc);margin-top:-9px;border:0}
+input[type=range]::-moz-range-thumb{width:6px;height:20px;border-radius:1px;background:var(--pc);border:0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.sfa-foot{margin-top:22px;padding-top:10px;border-top:1px solid var(--rule);font-size:.78rem;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script>
+/* Curseurs : la couleur du curseur reprend celle de son accent-color d'origine ; remplissage gauche en couleur. */
+addEventListener('DOMContentLoaded',()=>{
+/* Curseurs : couleur reprise de accent-color, remplissage à gauche. Resynchronisé en continu pour suivre
+   les curseurs créés ou déplacés par la simulation elle-même. */
+const fill=r=>{if(!r.dataset.sfa){r.dataset.sfa=1;const c=r.style.accentColor||getComputedStyle(r).accentColor;
+    if(c&&c!=='auto')r.style.setProperty('--pc',c);}
+  const v=r.value+'|'+r.min+'|'+r.max;if(r._sv===v)return;r._sv=v;
+  const p=(r.value-r.min)/(r.max-r.min)*100;
+  r.style.background=`linear-gradient(to right,var(--pc) ${p}%,var(--rule2) ${p}%) center/100% 2px no-repeat`;};
+const all=()=>document.querySelectorAll('input[type=range]').forEach(fill);
+all();document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches('input[type=range]'))fill(e.target);});
+setInterval(all,150);
+/* Contrôles écrits en style en ligne (sans classe) : on leur donne les classes du kit. */
+const st=e=>(e.getAttribute('style')||'').replace(/\s/g,'').toLowerCase();
+const isPill=e=>/border-radius:(1[6-9]|20|99)px/.test(st(e));
+document.querySelectorAll('span').forEach(sp=>{if(sp.classList.length||!isPill(sp))return;
+  const n=sp.nextElementSibling,pv=sp.previousElementSibling;
+  if(n&&n.matches('input[type=range],select,button'))sp.classList.add('pill');
+  else if(pv&&pv.matches('input[type=range],select'))sp.classList.add('val');
+  else sp.classList.add('pill');});
+document.querySelectorAll('div').forEach(d=>{if(d.classList.length)return;const s=st(d);
+  if(/border-radius:(1[6-9]|20)px/.test(s)&&/monospace/.test(s))d.classList.add(d.id==='fml'?'fml':'info');
+  else if(d.querySelector(':scope>canvas')&&/border-radius:1[0-4]px/.test(s))d.classList.add('sfa-stage');});
+const tag=b=>{const s=st(b);b.classList.toggle('on',/#185fa5|rgb\(24,95,165\)/.test(s)&&!/#fff[;f]|#ffffff|rgb\(255,255,255\)/.test(s.match(/background:[^;]+/)?.[0]||''));};
+document.querySelectorAll('button:not(.btn)').forEach(b=>{b.classList.add('btn','sfa-n');tag(b);});
+new MutationObserver(ms=>ms.forEach(m=>{if(m.target.classList&&m.target.classList.contains('sfa-n'))tag(m.target);}))
+  .observe(document.body,{subtree:true,attributes:true,attributeFilter:['style']});
+});
+</script>
+<header class="sfa-head"><h1>Oscillateur harmonique<small>Masse-ressort, période et phase</small></h1><span class="sfa-tag"><b>SFA</b> · Physique · Oscillations</span></header>
+
+
 
 <canvas id="cv" style="width:100%;height:52vh;min-height:340px;"></canvas>
 
@@ -29,15 +114,15 @@ input[type=range]{flex:1;min-width:100px;}
   <button class="btn" onclick="paused=!paused;event.target.textContent=paused?'Lecture':'Pause';event.target.className=paused?'btn':'btn on';">Pause</button>
 </div>
 <div class="row">
-  <span class="pill" style="border-color:#b5d4f4;color:#185fa5;">A amplitude</span>
+  <span style="display:flex;align-items:center;gap:10px;flex:1 1 280px;"><span class="pill" style="border-color:#b5d4f4;color:#185fa5;">A amplitude</span>
   <input type="range" id="A" min="0.2" max="1" value="0.8" step="0.05" style="accent-color:#378ADD;max-width:150px;">
-  <span class="val" id="Av" style="border-color:#b5d4f4;color:#185fa5;">0.80</span>
-  <span class="pill" style="border-color:#9FE1CB;color:#1D9E75;">T période</span>
+  <span class="val" id="Av" style="border-color:#b5d4f4;color:#185fa5;">0.80</span></span>
+  <span style="display:flex;align-items:center;gap:10px;flex:1 1 280px;"><span class="pill" style="border-color:#9FE1CB;color:#1D9E75;">T période</span>
   <input type="range" id="T" min="1" max="4" value="2" step="0.1" style="accent-color:#1D9E75;max-width:150px;">
-  <span class="val" id="Tv" style="border-color:#9FE1CB;color:#1D9E75;">2.0 s</span>
-  <span class="pill" style="border-color:#c9b8ea;color:#6a5aca;">φ phase</span>
+  <span class="val" id="Tv" style="border-color:#9FE1CB;color:#1D9E75;">2.0 s</span></span>
+  <span style="display:flex;align-items:center;gap:10px;flex:1 1 280px;"><span class="pill" style="border-color:#c9b8ea;color:#6a5aca;">φ phase</span>
   <input type="range" id="phi" min="-180" max="180" value="0" step="10" style="accent-color:#7F77DD;max-width:150px;">
-  <span class="val" id="phiv" style="border-color:#c9b8ea;color:#6a5aca;">0°</span>
+  <span class="val" id="phiv" style="border-color:#c9b8ea;color:#6a5aca;">0°</span></span>
 </div>
 
 <script>
@@ -92,14 +177,14 @@ function draw(){
   const Lw=W*0.46;
 
   // ===== RESSORT (haut gauche) =====
-  const syA=H*0.24, wallX=28, eqX=Lw*0.52, amp=Lw*0.20, bs=30;
-  ctx.fillStyle=GREY;ctx.font='700 12px system-ui';ctx.textAlign='left';ctx.fillText('Ressort',wallX,syA-52);
+  const syA=H*0.24, wallX=28, eqX=Lw*0.52, bs=30, amp=Math.min(Lw*0.20,eqX-wallX-bs/2-24); // le ressort comprimé reste visible sur écran étroit
+  ctx.fillStyle=GREY;ctx.font='700 12px Mulish,system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('Ressort',wallX,syA-52);
   // mur
   ctx.strokeStyle='#b7bbbf';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(wallX,syA-30);ctx.lineTo(wallX,syA+30);ctx.stroke();
   for(let i=-3;i<=3;i++){ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(wallX,syA+i*9);ctx.lineTo(wallX-8,syA+i*9-6);ctx.stroke();}
   // ligne équilibre
   ctx.strokeStyle='#e0e0e0';ctx.setLineDash([3,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(eqX,syA-34);ctx.lineTo(eqX,syA+40);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle=GREY;ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('équilibre',eqX,syA+52);
+  ctx.fillStyle=GREY;ctx.font='10px Mulish,system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('équilibre',eqX,syA-38); // au-dessus : ne chevauche plus l'étiquette x
   const bx=eqX+s*amp;
   // ressort
   ctx.strokeStyle=INK;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wallX,syA);
@@ -112,18 +197,21 @@ function draw(){
   // bloc
   ctx.fillStyle='#e6f1fb';ctx.strokeStyle=BLUE;ctx.lineWidth=2.5;ctx.beginPath();ctx.roundRect(bx-bs/2,syA-bs/2,bs,bs,5);ctx.fill();ctx.stroke();
   // déplacement x
-  if(Math.abs(s)>0.02){arrow(eqX,syA+30,s*amp,0,GREEN_D,1.8);ctx.fillStyle=GREEN_D;ctx.font='600 11px ui-monospace,monospace';ctx.fillText('x',(eqX+bx)/2,syA+44);}
+  if(Math.abs(s)>0.02){arrow(eqX,syA+30,s*amp,0,GREEN_D,1.8);ctx.fillStyle=GREEN_D;ctx.font='600 11px JetBrains Mono,ui-monospace,monospace';ctx.fillText('x',(eqX+bx)/2,syA+44);}
 
   // ===== PENDULE (bas gauche) =====
-  const pivot={x:Lw*0.52,y:H*0.50}, Lp=H*0.30, maxA=0.6;
+  const pivot={x:Lw*0.52,y:H*0.50}, maxA=0.6, Lp=Math.min(H*0.30,(pivot.x-18)/Math.sin(maxA)); // la boule reste dans le canvas
   const th=s*maxA;
   const bob={x:pivot.x+Lp*Math.sin(th),y:pivot.y+Lp*Math.cos(th)};
-  ctx.fillStyle=GREY;ctx.font='700 12px system-ui';ctx.textAlign='left';ctx.fillText('Pendule',24,pivot.y-6);
+  ctx.fillStyle=GREY;ctx.font='700 12px Mulish,system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('Pendule',24,pivot.y-6);
   // référence verticale
   ctx.strokeStyle='#e0e0e0';ctx.setLineDash([3,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(pivot.x,pivot.y+Lp+14);ctx.stroke();ctx.setLineDash([]);
   // arc θ
   ctx.strokeStyle=ORANGEfix();ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(pivot.x,pivot.y,28,Math.PI/2,Math.PI/2-th,th>0);ctx.stroke();
-  ctx.fillStyle=ORANGEfix();ctx.font='600 12px system-ui';ctx.textAlign='center';ctx.fillText('θ',pivot.x+ (th>=0?16:-16),pivot.y+34);
+  ctx.fillStyle=ORANGEfix();ctx.font='600 12px Mulish,system-ui,sans-serif';ctx.textAlign='center';// θ sur la bissectrice, hors de l'arc ; si l'angle est petit, à côté de la tige
+  {const sg=th>=0?1:-1;let lx=pivot.x+42*Math.sin(th/2),ly=pivot.y+42*Math.cos(th/2)+4;
+   if(Math.abs(42*Math.sin(th/2))<8){lx=pivot.x+42*Math.sin(th)+sg*10;ly=pivot.y+42*Math.cos(th)+4;}
+   ctx.fillText('θ',lx,ly);}
   // tige
   ctx.strokeStyle=INK;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(bob.x,bob.y);ctx.stroke();
   // pivot
@@ -137,11 +225,11 @@ function draw(){
   const gx=W*0.53,gw=W-gx-18,gTop=H*0.14,gBot=H*0.86,gcy=(gTop+gBot)/2,gA=(gBot-gTop)*0.40;
   const mapT=tau=>gx+tau/Twin*gw, mapY=val=>gcy-val*gA;
   ctx.strokeStyle=AX;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(gx,gcy);ctx.lineTo(gx+gw,gcy);ctx.moveTo(gx,gTop);ctx.lineTo(gx,gBot);ctx.stroke();
-  ctx.fillStyle=GREY;ctx.font='600 11px system-ui';ctx.textAlign='left';ctx.fillText('x(t)',gx+4,gTop+2);ctx.textAlign='right';ctx.fillText('t',gx+gw-2,gcy-6);
+  ctx.fillStyle=GREY;ctx.font='600 11px Mulish,system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('x(t)',gx+4,gTop-6);ctx.textAlign='right';ctx.fillText('t',gx+gw-2,gcy-6);
   // lignes ±A
   ctx.strokeStyle='#e3e6e9';ctx.setLineDash([4,4]);ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(gx,mapY(A));ctx.lineTo(gx+gw,mapY(A));ctx.moveTo(gx,mapY(-A));ctx.lineTo(gx+gw,mapY(-A));ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle=BLUE_D;ctx.font='600 11px ui-monospace,monospace';ctx.textAlign='left';ctx.fillText('+A',gx+gw-26,mapY(A)-4);ctx.fillText('−A',gx+gw-26,mapY(-A)+14);
+  ctx.fillStyle=BLUE_D;ctx.font='600 11px JetBrains Mono,ui-monospace,monospace';ctx.textAlign='right';ctx.fillText('+A',gx-4,mapY(A)+4);ctx.fillText('−A',gx-4,mapY(-A)+4); // à gauche de l'axe : hors de la courbe
   // courbe
   ctx.strokeStyle=step>=5?GREEN:'#bcd9c9';ctx.lineWidth=2.6;ctx.beginPath();
   for(let i=0;i<=240;i++){const tau=Twin*i/240;const X=mapT(tau),Y=mapY(sig(tau));i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}ctx.stroke();
@@ -150,13 +238,23 @@ function draw(){
   let tp1=(2*Math.PI*k1-phi)/om; if(tp1<0)tp1+=T; while(tp1>T)tp1-=T; const tp2=tp1+T;
   if(tp2<=Twin){const y=mapY(A)-14;ctx.strokeStyle=VIO;ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(mapT(tp1),y);ctx.lineTo(mapT(tp2),y);ctx.moveTo(mapT(tp1),y-4);ctx.lineTo(mapT(tp1),y+4);ctx.moveTo(mapT(tp2),y-4);ctx.lineTo(mapT(tp2),y+4);ctx.stroke();
-    ctx.fillStyle=VIO;ctx.font='600 11px system-ui';ctx.textAlign='center';ctx.fillText('T = '+T.toFixed(1)+' s',(mapT(tp1)+mapT(tp2))/2,y-4);}
+    ctx.font='600 11px Mulish,system-ui,sans-serif';ctx.textAlign='center';
+    const lb='T = '+T.toFixed(1)+' s',lw=ctx.measureText(lb).width/2+3;
+    const lx=Math.max(gx+lw+2,Math.min(gx+gw-lw,(mapT(tp1)+mapT(tp2))/2)); // reste dans le graphe
+    ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fillRect(lx-lw,y-16,2*lw,14);
+    ctx.fillStyle=VIO;ctx.fillText(lb,lx,y-5);}
   // point courant
   const tc=t%Twin;
   ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(mapT(tc),gTop);ctx.lineTo(mapT(tc),gBot);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle=GREEN_D;ctx.beginPath();ctx.arc(mapT(tc),mapY(s),5,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
   // formule (dès l'étape solution)
-  if(step>=5){ctx.fillStyle=GREEN_D;ctx.font='700 13px ui-monospace,monospace';ctx.textAlign='center';ctx.fillText('x(t) = A·cos(ωt + φ) ,  ω = 2π/T = '+(2*Math.PI/T).toFixed(2)+' rad/s',(gx+gx+gw)/2,gBot+22);}
+  if(step>=5){ctx.fillStyle=GREEN_D;ctx.font='700 13px JetBrains Mono,ui-monospace,monospace';ctx.textAlign='center';
+    const f1='x(t) = A·cos(ωt + φ)',f2='ω = 2π/T = '+(2*Math.PI/T).toFixed(2)+' rad/s',f=f1+' ,  '+f2;
+    if(ctx.measureText(f).width<=gw)ctx.fillText(f,(gx+gx+gw)/2,gBot+22);
+    else{ // écran étroit : deux lignes, centrées dans le canvas
+      ctx.font='700 12px JetBrains Mono,ui-monospace,monospace';
+      const cxm=Math.max(gx+gw/2,W/2);const cxF=w=>Math.min(Math.max(cxm,w/2+6),W-w/2-6);
+      ctx.fillText(f1,cxF(ctx.measureText(f1).width),gBot+18);ctx.fillText(f2,cxF(ctx.measureText(f2).width),gBot+34);}}
 
   if(!paused)t+=0.016;
   requestAnimationFrame(draw);
@@ -164,3 +262,6 @@ function draw(){
 function ORANGEfix(){return '#BA7517';}
 setStep(0);draw();
 </script>
+<footer class="sfa-foot">Science For All · simulations interactives</footer>
+</body>
+</html>
